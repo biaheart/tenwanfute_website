@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+<ul class="nav nav-tabs">
+  <li class="nav-item">
+    <a class="navbar-brand" href="#">电力系统客户端</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link active" data-toggle="tab" href="#knotAdmittanceMatrix">节点导纳矩阵</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#loadFlowCalculation">潮流计算</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#thermalPowerPlant">火电机组计算</a>
+  </li>
+</ul>
+
+<div id="myTabContent" class="tab-content">
+<!--  第一个tab标签-->
+  <div class="tab-pane fade active show" id="knotAdmittanceMatrix">
+    <!--    第一个tab标签左边的一堆控件-->
+    <div style="display: inline-block;vertical-align: top;">
+      <br>
+    <div class="container">
+      <form>
+        <fieldset>
+          <legend>读取原始文件</legend>
+          <div class="form-group">
+            <label for="exampleInputFile">导入</label>
+            <input type="file" class="form-control-file" id="inputFile" aria-describedby="fileHelp">
+          </div>
+        </fieldset>
+      </form>
+      <br>
+    </div>
+
+
+    <div class="container">
+      <form>
+        <fieldset>
+          <legend>预览导纳矩阵</legend>
+          <div class="form-group" style="display: inline-block;">
+            <label for="exampleSelect1">选择矩阵</label>
+            <select class="form-control" id="exampleSelect1" style="width: 150px;">
+              <option>null</option>
+            </select>
+          </div>
+        </fieldset>
+      </form>
+      <br>
+    </div>
+
+
+    <div class="container">
+<!--       method="POST" action="/reviseMatrix" target="myIframe"-->
+      <form id="reviseForm">
+        <fieldset>
+          <legend>修改导纳矩阵</legend>
+          <iframe name="myIframe" style="display:none"></iframe>
+          <div class="form-group">
+            <div style="display: inline-block;">
+              <label for="exampleSelect2">选择矩阵</label>
+              <select class="form-control" id="exampleSelect2" name="select2" style="width: 150px;">
+                <option>null</option>
+              </select>
+
+            </div>
+            <div style="display: inline-block;">
+              <label for="exampleSelect3">选择方式</label>
+              <select class="form-control" id="exampleSelect3" name="select3" style="width: 150px;">
+                <option value="1">增加支路</option>
+                <option value="0">删减支路</option>
+              </select>
+            </div>
+
+          </div>
+          <div class="form-group has-success">
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess1">母线编号1</label><br>
+              <input class="form-control" type="number" name="bus1" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess2">母线编号2</label><br>
+              <input class="form-control" type="number" name="bus2" style="width: 150px;">
+            </div>
+            <br>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess3">支路电阻</label><br>
+              <input class="form-control" type="number" name="resistance" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess4">支路电抗</label><br>
+                <input class="form-control" type="number" name="reactance" style="width: 150px;">
+            </div>
+            <br>
+            <div style="display: inline-block;">
+              <button type="reset" class="btn btn-outline-info">重置</button>
+              <button type="button" class="btn btn-outline-info" onclick="ajaxForm()">修改</button>
+            </div>
+          </div>
+
+        </fieldset>
+      </form>
+      <br>
+    </div>
+    </div>
+    <!--    第一个tab标签右边的展示框和table-->
+    <div style="display: inline-block;vertical-align: top;">
+      <div class="card text-white bg-primary mb-3" style="width: 73rem;height: 40rem;overflow: auto;">
+        <div class="card-header" id="cardTitleMatrix">节点导纳矩阵</div>
+        <div class="card-body">
+          <table class="table table-hover" >
+            <tbody id="displayMatrixBody">
+            <tr class="table-danger" >
+              <th scope="col">请导入矩阵再预览</th>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!--第二个tab标签-->
+  <div class="tab-pane fade" id="loadFlowCalculation">
+    <p class="container text-center">empty</p>
+  </div>
+<!--  第三个tab标签-->
+  <div class="tab-pane fade" id="thermalPowerPlant">
+    <p class="container text-center">empty</p>
+  </div>
+
+</div>
+
+
+<script>
+<!--初始化脚本，在后端的数据文件夹里面查找已导入的矩阵并获得路径添加到选项中-->
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/initialization');
+        xhr.send();
+        xhr.onload = function (){
+          if (xhr.status == 200){
+            response_data = JSON.parse(xhr.responseText);
+            for (var key in response_data){
+              $('#exampleSelect1').append('<option>'+ response_data[key] +'</option>');
+              $('#exampleSelect2').append('<option>'+ response_data[key] +'</option>');
+            }
+          }
+          else{
+            alert("初始化界面失败请刷新重试")
+          }
+        }
+
+<!--选择文件导入后执行下面的函数，它将文件发送到后端，后端处理完后返回矩阵的json对象，然后添加选项到预览和选择矩阵-->
+  $("#inputFile").bind("change",function () {
+        var fileInfo = document.getElementById("inputFile").files[0];
+        var formData = new FormData();
+        formData.append('file', fileInfo);
+        var xhr = new XMLHttpRequest();
+        xhr.open('post', '/dataPreprocess');
+        xhr.send(formData);
+        xhr.onload = function (){
+          if (xhr.status == 200){
+            response_data = JSON.parse(xhr.responseText);
+            for (var key in response_data){
+              $('#exampleSelect1').append('<option>'+ key +'</option>');
+              $('#exampleSelect2').append('<option>'+ key +'</option>');
+            }
+          }
+          else{
+            alert("上传失败请重试")
+          }
+        }
+  })
+<!--当预览矩阵的选项值改变的时候（null不做任何事情），发送请求接收返回的矩阵json对象，然后新生成一个table来将矩阵展示出来-->
+  $("#exampleSelect1").change(function () {
+    option = $("#exampleSelect1 option:selected").val()
+    if (option != "null"){
+       var xhr = new XMLHttpRequest();
+       xhr.open('POST', '/get');
+       xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+       xhr.send("key=" + option);
+       xhr.onload = function (){
+       if (xhr.status == 200){
+            response_data = JSON.parse(xhr.responseText);
+            for (var key in response_data){
+              $('#cardTitleMatrix').html("节点导纳矩阵——" + key)
+              $('#displayMatrixBody').empty()
+
+              $('#displayMatrixBody').append('<tr class="table-danger">')
+              $('#displayMatrixBody').append('<th scope="row">' + '编号' + '</th>')
+              for (var j=1;j <= response_data[key].length;j++){
+                var addCell = '<td>' + j + "</td>"
+                $('#displayMatrixBody').append(addCell)
+              }
+              $('#displayMatrixBody').append('</tr>')
+
+              for (var i=1;i <= response_data[key].length;i++){
+                var tempData = response_data[key][i-1].split(",")
+                $('#displayMatrixBody').append('<tr class="table-danger">')
+                $('#displayMatrixBody').append('<th scope="row">' + i + '</th>')
+                for (var j=0;j < response_data[key].length;j++){
+                  var addCell = '<td>' + tempData[j] + "</td>"
+                  $('#displayMatrixBody').append(addCell)
+                }
+                $('#displayMatrixBody').append('</tr>')
+              }
+            }
+       }
+       }
+    }else{
+        $('#cardTitleMatrix').html("节点导纳矩阵")
+        $('#displayMatrixBody').empty()
+    }
+  })
+<!--传递表单数据来修改矩阵-->
+  function ajaxForm(){
+        var formData = new FormData($("#reviseForm")[0]);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/reviseMatrix');
+        xhr.send(formData);
+        xhr.onload = function (){
+          if (xhr.status == 200){
+            alert(xhr.responseText)
+          }
+          else{
+            alert("上传失败请重试")
+          }
+        }
+  }
+
+  
+</script>
+{% endblock %}
