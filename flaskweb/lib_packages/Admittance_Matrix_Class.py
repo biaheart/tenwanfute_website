@@ -78,7 +78,7 @@ class Admittancematrix:  # 建立节点导纳矩阵类
         for i in range(len(nodelist1)):
             self.add(nodelist1[i], nodelist2[i], resistance[i], reactance[i])
         for i in range(self.bus_num):
-            self.set_self_ad(i, conductance[i], susceptance[i])
+            self.set_self_ad(i+1, conductance[i], susceptance[i])
 
 '''
 import h5py
