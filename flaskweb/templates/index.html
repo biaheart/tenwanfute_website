@@ -128,7 +128,23 @@
 
 <!--第二个tab标签-->
   <div class="tab-pane fade" id="loadFlowCalculation">
-    <p class="container text-center">empty</p>
+    <div style="display: inline-block;vertical-align: top;">
+      <br>
+      <div class="container">
+      <form>
+        <fieldset>
+          <legend>结合PQ分解法和牛拉法进行潮流计算</legend>
+          <div class="form-group" style="display: inline-block;">
+            <label for="exampleSelect4">选择需要进行计算的网络</label>
+            <select class="form-control" id="exampleSelect4" style="width: 150px;">
+              <option>null</option>
+            </select>
+          </div>
+        </fieldset>
+      </form>
+      <br>
+    </div>
+    </div>
   </div>
 <!--  第三个tab标签-->
   <div class="tab-pane fade" id="thermalPowerPlant">
@@ -149,6 +165,7 @@
             for (var key in response_data){
               $('#exampleSelect1').append('<option>'+ response_data[key] +'</option>');
               $('#exampleSelect2').append('<option>'+ response_data[key] +'</option>');
+              $('#exampleSelect4').append('<option>'+ response_data[key] +'</option>');
             }
           }
           else{
@@ -170,6 +187,7 @@
             for (var key in response_data){
               $('#exampleSelect1').append('<option>'+ key +'</option>');
               $('#exampleSelect2').append('<option>'+ key +'</option>');
+              $('#exampleSelect4').append('<option>'+ key +'</option>');
             }
           }
           else{
@@ -186,38 +204,16 @@
        xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
        xhr.send("key=" + option);
        xhr.onload = function (){
-       if (xhr.status == 200){
-            response_data = JSON.parse(xhr.responseText);
-            for (var key in response_data){
-              $('#cardTitleMatrix').html("节点导纳矩阵——" + key)
-              $('#displayMatrixBody').empty()
-
-              $('#displayMatrixBody').append('<tr class="table-danger">')
-              $('#displayMatrixBody').append('<th scope="row">' + '编号' + '</th>')
-              for (var j=1;j <= response_data[key].length;j++){
-                var addCell = '<td>' + j + "</td>"
-                $('#displayMatrixBody').append(addCell)
-              }
-              $('#displayMatrixBody').append('</tr>')
-
-              for (var i=1;i <= response_data[key].length;i++){
-                var tempData = response_data[key][i-1].split(",")
-                $('#displayMatrixBody').append('<tr class="table-danger">')
-                $('#displayMatrixBody').append('<th scope="row">' + i + '</th>')
-                for (var j=0;j < response_data[key].length;j++){
-                  var addCell = '<td>' + tempData[j] + "</td>"
-                  $('#displayMatrixBody').append(addCell)
-                }
-                $('#displayMatrixBody').append('</tr>')
-              }
-            }
-       }
+         if (xhr.status == 200){
+              response_data = JSON.parse(xhr.responseText);
+              console.log(response_data)
+         }
        }
     }else{
-        $('#cardTitleMatrix').html("节点导纳矩阵")
-        $('#displayMatrixBody').empty()
+
     }
   })
+
 <!--传递表单数据来修改矩阵-->
   function ajaxForm(){
         var formData = new FormData($("#reviseForm")[0]);
@@ -234,6 +230,25 @@
         }
   }
 
+<!--  选择文件后调用pq分解法和牛拉法进行潮流计算，并接收返回的计算结果，然后提示是否计算成功-->
+  $("#exampleSelect4").change(function () {
+    option = $("#exampleSelect4 option:selected").val()
+    if (option != "null"){
+       var xhr = new XMLHttpRequest();
+       xhr.open('POST', '/loadFlowCalculation');
+       xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+       xhr.send("key=" + option);
+       xhr.onload = function (){
+         if (xhr.status == 200){
+              response_data = JSON.parse(xhr.responseText);
+              // response_data里面有{'U_actual_value''angle_actual_value''S_balanced'}这几个数据，之后可以调用数据可视化函数，或者直接输出出来
+              alert("计算成功")
+         }
+       }
+    }else{
+
+    }
+  })
   
 </script>
 {% endblock %}
