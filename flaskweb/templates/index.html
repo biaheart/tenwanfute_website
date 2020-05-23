@@ -220,7 +220,29 @@
        xhr.onload = function (){
          if (xhr.status == 200){
               response_data = JSON.parse(xhr.responseText);
-              console.log(response_data)
+              for (var key in response_data){
+                $('#cardTitleMatrix').html("节点导纳矩阵——" + key)
+                $('#displayMatrixBody').empty()
+
+                $('#displayMatrixBody').append('<tr class="table-danger">')
+                $('#displayMatrixBody').append('<th scope="row">' + '编号' + '</th>')
+                for (var j=1;j <= response_data[key].length;j++){
+                  var addCell = '<td>' + j + "</td>"
+                  $('#displayMatrixBody').append(addCell)
+                }
+                $('#displayMatrixBody').append('</tr>')
+
+                for (var i=1;i <= response_data[key].length;i++){
+                  var tempData = response_data[key][i-1].split(",")
+                  $('#displayMatrixBody').append('<tr class="table-danger">')
+                  $('#displayMatrixBody').append('<th scope="row">' + i + '</th>')
+                  for (var j=0;j < response_data[key].length;j++){
+                    var addCell = '<td>' + tempData[j] + "</td>"
+                    $('#displayMatrixBody').append(addCell)
+                  }
+                  $('#displayMatrixBody').append('</tr>')
+                }
+              }
          }
        }
     }else{
