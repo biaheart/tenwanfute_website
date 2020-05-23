@@ -146,7 +146,7 @@
       </div>
 
       <div>
-        <div class="card text-white bg-primary mb-3" style="width: 25rem;height: 30rem;overflow: auto;">
+        <div class="card text-white bg-primary mb-3" style="width: 40rem;height: 30rem;overflow: auto;">
           <div class="card-header">潮流计算结果:</div>
           <div class="card-body">
             <table class="table table-hover">
@@ -246,7 +246,7 @@
          }
        }
     }else{
-
+      $('#displayMatrixBody').empty();
     }
   })
 
@@ -278,16 +278,18 @@
        xhr.onload = function (){
          if (xhr.status == 200){
               response_data = JSON.parse(xhr.responseText);
+              S = response_data['S_actual_value'][0].substring(2, response_data['S_actual_value'][0].length-1);  //因为返回的复数字符串第一个字符是[第二个是空格，最后一个是[，被迫截取
+              S_actual_value = S.replace(/[\r\n]/g,"").split(/\ +/g);  // 返回的字符串里面有换行符，要删掉，而且相邻两个数据之间有1或2个空格，吐血，好像正则表达式不同浏览器会有不同，不清楚了
               $('#result').empty();
-              $('#result').append('<tr class="table-danger"><th>平衡节点注入功率（MW）</th><th>' + response_data['S_balanced'] + '</th></tr>');
-              $('#result').append('<tr class="table-danger"><th scope="col">节点电压有效值（KV）</th><th scope="col">节点相角（°）</th></tr>');
-              for (var i=0;i<response_data['U_actual_value'][0].length;i++){
+              $('#result').append('<tr class="table-danger"><th scope="col">编号</th><th scope="col">节点电压有效值（KV）</th><th scope="col">节点相角（°）</th><th scope="col">节点注入功率（MW）</th></tr>');
+              for (var i=1;i<=response_data['U_actual_value'][0].length;i++){
                   $('#result').append('<tr class="table-danger">');
-                  $('#result').append('<th class="table-danger">' + response_data['U_actual_value'][0][i] + '</th>')
-                  $('#result').append('<th class="table-danger">' + response_data['angle_actual_value'][0][i] + '</th>')
+                  $('#result').append('<th class="table-danger">' + i + '</th>');
+                  $('#result').append('<th class="table-danger">' + response_data['U_actual_value'][0][i-1] + '</th>')
+                  $('#result').append('<th class="table-danger">' + response_data['angle_actual_value'][0][i-1] + '</th>')
+                  $('#result').append('<th class="table-danger">' + S_actual_value[i-1] + '</th>')
                   $('#result').append('</tr>')
               }
-
               alert("计算成功")
          }
        }

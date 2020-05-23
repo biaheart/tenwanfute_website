@@ -1,8 +1,23 @@
-
-
 def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算函数
+    '''
+    import h5py
+    from lib_packages.Admittance_Matrix_Class import Admittancematrix   # 需要导入建立节点导纳矩阵的类
+
+
+    f = h5py.File('UW ARCHIVE.h5', 'r')    # 正确读取进行潮流计算的h5文件
+    a1 = f['BUS_DATA'][()]   # 参数a1为读取主键为‘BUS_NAMES’的数据
+    bus_num = f['BUS_NAMES'].shape[0]   # 参数bus_num为母线个数
+    a2 = f['BRANCH_DATA'][()]
+    MVA_BASE = f['MVA_BASE'][()]   # 参数MVA_BASE为基准功率
+    matrix = Admittancematrix(bus_num)
+    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a1[:, 13], a1[:, 14])
+    admatrix = matrix.get_matrix()   # 参数admatirx为建立的节点导纳矩阵
+
+    print(load_flow_calculation(admatrix, a1, bus_num, MVA_BASE))  # 调用本函数的实例
+    '''
     import numpy as np
     import math
+
     RE = np.zeros((bus_num, bus_num))  # 实部矩阵
     IM = np.zeros((bus_num, bus_num))  # 虚部矩阵
     i = 0
@@ -342,42 +357,25 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
 
     i = 0
     j = 0
-    S_balanced = complex(0, 0)  # 初始化平衡节点注入功率
+    S_actual_value = np.zeros((1, bus_num), dtype=np.complex)   # 计算各节点注入功率有名值
     while i < bus_num:
-        if a1[i, 2] == 3:
-            P_balanced = 0
-            Q_balanced = 0
-            while j < bus_num:   # 计算平衡节点注入有功的标幺值
-                angle_ij_balanced = initialize[1, i] - initialize[1, j]
-                P_balanced += initialize[0, i] * initialize[0, j] * (
-                        RE[i, j] * math.cos(angle_ij_balanced) + IM[i, j] * math.sin(angle_ij_balanced))
-                j = j + 1
-            j = 0
-            while j < bus_num:   # 计算平衡节点注入无功的标幺值
-                angle_ij_balanced = initialize[1, i] - initialize[1, j]
-                Q_balanced += initialize[0, i] * initialize[0, j] * (
-                        RE[i, j] * math.sin(angle_ij_balanced) - IM[i, j] * math.cos(angle_ij_balanced))
-                j = j + 1
-            j = 0
-            S_balanced = complex(P_balanced, Q_balanced) * MVA_BASE   # 计算平衡节点注入功率的有名值
+        P_i = 0
+        Q_i = 0
+        while j < bus_num:  # 计算i节点注入有功的标幺值
+            angle_ij_final = initialize[1, i] - initialize[1, j]
+            P_i += initialize[0, i] * initialize[0, j] * (
+                    RE[i, j] * math.cos(angle_ij_final) + IM[i, j] * math.sin(angle_ij_final))
+            j = j + 1
+        j = 0
+        while j < bus_num:  # 计算i节点注入无功的标幺值
+            angle_ij_final = initialize[1, i] - initialize[1, j]
+            Q_i += initialize[0, i] * initialize[0, j] * (
+                    RE[i, j] * math.sin(angle_ij_final) - IM[i, j] * math.cos(angle_ij_final))
+            j = j + 1
+        j = 0
+        S_actual_value[0, i] = complex(P_i * MVA_BASE, Q_i * MVA_BASE)   # 计算平衡节点注入功率的有名值
         i = i + 1
-    return U_actual_value, angle_actual_value, S_balanced
+    return U_actual_value, angle_actual_value, S_actual_value
 
 
-'''
-import h5py
-from lib_packages.Admittance_Matrix_Class import Admittancematrix
 
-
-f = h5py.File('UW ARCHIVE.h5', 'r')    # 正确读取对应的h5文件
-a1 = f['BUS_DATA'][()]  # 读取主键为‘BUS_NAMES’的数据
-bus_num = f['BUS_NAMES'].shape[0]
-a2 = f['BRANCH_DATA'][()]
-MVA_BASE = f['MVA_BASE'][()]
-matrix = Admittancematrix(bus_num)
-matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a1[:, 13], a1[:, 14])
-# print(matrix.get_matrix())
-admatrix = matrix.get_matrix()
-
-print(load_flow_calculation(admatrix, a1, bus_num, MVA_BASE))
-'''

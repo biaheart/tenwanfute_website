@@ -105,11 +105,9 @@ def loadFlowCalculation():
     with open(knot_matrix_data_path, 'rb') as file:
         matrix = pickle.load(file)
         admatrix = matrix.get_matrix()
-    (U_actual_value, angle_actual_value, S_balanced) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1,
-                                                                                                   bus_num, MVA_BASE)
-    # 下面的语句是将结果转成json格式进行传输，因为json没有复数类型，所以S_balanced转成了字符串
-    result = {'U_actual_value': U_actual_value.tolist(), 'angle_actual_value': angle_actual_value.tolist(),
-              'S_balanced': str(S_balanced)}
+    (U_actual_value, angle_actual_value, S_actual_value) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1, bus_num, MVA_BASE)
+    # 下面的语句是将结果转成json格式进行传输，因为json没有复数类型，所以S_actual_value转成了字符串
+    result = {'U_actual_value': U_actual_value.tolist(), 'angle_actual_value': angle_actual_value.tolist(), 'S_actual_value':list(map(str, S_actual_value))}
     return result
 
 
