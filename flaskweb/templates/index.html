@@ -143,9 +143,23 @@
         </fieldset>
       </form>
       <br>
-    </div>
+      </div>
+
+      <div>
+        <div class="card text-white bg-primary mb-3" style="width: 25rem;height: 30rem;overflow: auto;">
+          <div class="card-header">潮流计算结果:</div>
+          <div class="card-body">
+            <table class="table table-hover">
+              <tbody id="result">
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
 <!--  第三个tab标签-->
   <div class="tab-pane fade" id="thermalPowerPlant">
     <p class="container text-center">empty</p>
@@ -230,10 +244,11 @@
         }
   }
 
-<!--  选择文件后调用pq分解法和牛拉法进行潮流计算，并接收返回的计算结果，然后提示是否计算成功-->
+<!--  选择文件后调用pq分解法和牛拉法进行潮流计算，并接收返回的计算结果，然后提示是否计算成功，接着将数据显示到一个表格"#result"上-->
   $("#exampleSelect4").change(function () {
     option = $("#exampleSelect4 option:selected").val()
     if (option != "null"){
+       alert("计算耗时请稍等,按确定后开始计算");
        var xhr = new XMLHttpRequest();
        xhr.open('POST', '/loadFlowCalculation');
        xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
@@ -241,12 +256,21 @@
        xhr.onload = function (){
          if (xhr.status == 200){
               response_data = JSON.parse(xhr.responseText);
-              // response_data里面有{'U_actual_value''angle_actual_value''S_balanced'}这几个数据，之后可以调用数据可视化函数，或者直接输出出来
+              $('#result').empty();
+              $('#result').append('<tr class="table-danger"><th>平衡节点注入功率（MW）</th><th>' + response_data['S_balanced'] + '</th></tr>');
+              $('#result').append('<tr class="table-danger"><th scope="col">节点电压有效值（KV）</th><th scope="col">节点相角（°）</th></tr>');
+              for (var i=0;i<response_data['U_actual_value'][0].length;i++){
+                  $('#result').append('<tr class="table-danger">');
+                  $('#result').append('<th class="table-danger">' + response_data['U_actual_value'][0][i] + '</th>')
+                  $('#result').append('<th class="table-danger">' + response_data['angle_actual_value'][0][i] + '</th>')
+                  $('#result').append('</tr>')
+              }
+
               alert("计算成功")
          }
        }
     }else{
-
+        $('#result').empty();
     }
   })
   
