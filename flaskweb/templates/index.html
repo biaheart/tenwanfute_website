@@ -303,6 +303,8 @@
               }
               alert("计算成功")
 
+              // 修复svg图会叠加的bug
+              $("svg").empty()
               // 生成显示节点连接关系的力导向图
               data = response_data['branch_connect'];
               bus_num = response_data['bus_num'];
@@ -425,6 +427,7 @@
        }
     }else{
         $('#result').empty();
+        $("svg").empty()
     }
   })
   
