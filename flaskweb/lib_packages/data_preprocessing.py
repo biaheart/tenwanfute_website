@@ -52,7 +52,7 @@ import h5py
 file_name = r'IEEE30BusSystemCDF.txt'
 read_data(file_name)
 f = h5py.File(r'../data/original_data/UW ARCHIVE.h5', 'r')     # 打开一个h5文件对象
-f['BUS_DATA'][(1, 2)]                   # 读取BUS_DATA的第一行第二列的数据
+f['BUS_DATA'][(0, 1)]                   # 读取BUS_DATA的第一行第二列的数据
 print(f.keys())
 print(f['BRANCH_DATA'][()])
 print(f['BUS_DATA'][()])

@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request
 import os, h5py, pickle
 from lib_packages import *
-import h5py
 
 
 app = Flask(__name__)
@@ -101,13 +100,18 @@ def loadFlowCalculation():
     a1 = f['BUS_DATA'][()]  # 读取主键为‘BUS_NAMES’的数据
     bus_num = f['BUS_NAMES'].shape[0]
     MVA_BASE = f['MVA_BASE'][()]
+    branch_data = f['BRANCH_DATA'][()]
+    # 以下几行代码是为了获得节点连接关系的数据
+    branch_connect = branch_data[:, 0:2].tolist()
+    branch_connect = list(map(lambda x: list(map(int, x)), branch_connect)) # 将数据从numpy矩阵转成list且将浮点型转成整型
     f.close()
     with open(knot_matrix_data_path, 'rb') as file:
         matrix = pickle.load(file)
         admatrix = matrix.get_matrix()
     (U_actual_value, angle_actual_value, S_actual_value) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1, bus_num, MVA_BASE)
     # 下面的语句是将结果转成json格式进行传输，因为json没有复数类型，所以S_actual_value转成了字符串
-    result = {'U_actual_value': U_actual_value.tolist(), 'angle_actual_value': angle_actual_value.tolist(), 'S_actual_value':list(map(str, S_actual_value))}
+    result = {'U_actual_value': U_actual_value.tolist(), 'angle_actual_value': angle_actual_value.tolist(),
+              'S_actual_value': list(map(str, S_actual_value)), 'branch_connect': branch_connect, 'bus_num': bus_num}
     return result
 
 

@@ -158,6 +158,11 @@
         </div>
       </div>
     </div>
+
+    <div style="display: inline-block;vertical-align: top;">
+<!--      用来显示力导向图的矢量图标签-->
+      <svg width="850" height="660"></svg>
+    </div>
   </div>
 
 <!--  第三个tab标签-->
@@ -225,7 +230,7 @@
                 $('#displayMatrixBody').empty()
 
                 $('#displayMatrixBody').append('<tr class="table-danger">')
-                $('#displayMatrixBody').append('<th scope="row">' + '编号' + '</th>')
+                $('#displayMatrixBody').append('<th scope="row">' + '节点编号' + '</th>')
                 for (var j=1;j <= response_data[key].length;j++){
                   var addCell = '<td>' + j + "</td>"
                   $('#displayMatrixBody').append(addCell)
@@ -266,6 +271,7 @@
         }
   }
 
+
 <!--  选择文件后调用pq分解法和牛拉法进行潮流计算，并接收返回的计算结果，然后提示是否计算成功，接着将数据显示到一个表格"#result"上-->
   $("#exampleSelect4").change(function () {
     option = $("#exampleSelect4 option:selected").val()
@@ -278,10 +284,15 @@
        xhr.onload = function (){
          if (xhr.status == 200){
               response_data = JSON.parse(xhr.responseText);
-              S = response_data['S_actual_value'][0].substring(2, response_data['S_actual_value'][0].length-1);  //因为返回的复数字符串第一个字符是[第二个是空格，最后一个是[，被迫截取
-              S_actual_value = S.replace(/[\r\n]/g,"").split(/\ +/g);  // 返回的字符串里面有换行符，要删掉，而且相邻两个数据之间有1或2个空格，吐血，好像正则表达式不同浏览器会有不同，不清楚了
+
+              // 将数据以表格形式展示出来
+
+              S = response_data['S_actual_value'][0].substring(2, response_data['S_actual_value'][0].length-1);
+              //因为返回的复数字符串第一个字符是[第二个是空格，最后一个是[，被迫截取
+              S_actual_value = S.replace(/[\r\n]/g,"").split(/\ +/g);
+              // 返回的字符串里面有换行符，要删掉，而且相邻两个数据之间有1或2个空格，吐血，好像正则表达式不同浏览器会有不同，不清楚了
               $('#result').empty();
-              $('#result').append('<tr class="table-danger"><th scope="col">编号</th><th scope="col">节点电压有效值（KV）</th><th scope="col">节点相角（°）</th><th scope="col">节点注入功率（MW）</th></tr>');
+              $('#result').append('<tr class="table-danger"><th scope="col">节点编号</th><th scope="col">节点电压有效值（KV）</th><th scope="col">节点相角（°）</th><th scope="col">节点注入功率（MW）</th></tr>');
               for (var i=1;i<=response_data['U_actual_value'][0].length;i++){
                   $('#result').append('<tr class="table-danger">');
                   $('#result').append('<th class="table-danger">' + i + '</th>');
@@ -291,6 +302,125 @@
                   $('#result').append('</tr>')
               }
               alert("计算成功")
+
+              // 生成显示节点连接关系的力导向图
+              data = response_data['branch_connect'];
+              bus_num = response_data['bus_num'];
+
+              var marge = {top:60,bottom:60,left:60,right:60}
+              var svg = d3.select("svg")
+              var width = svg.attr("width")
+              var height = svg.attr("height")
+              var g = svg.append("g")
+                  .attr("transform","translate("+marge.top+","+marge.left+")");
+              //准备数据
+              var nodes = [];
+              for(var i = 1; i <= bus_num; i++){ nodes.push({name:i})}
+
+              var edges = [];
+              for (i in data){
+                       edges.push({source:data[i][0]-1,target:data[i][1]-1});
+                       // 因为我的节点编号是从1开始的，而d3的力导向图的编号从0开始，所以要减一，我debug了大半天，太难了
+              }
+              //设置一个color的颜色比例尺，为了让不同的扇形呈现不同的颜色
+              var colorScale = d3.scaleOrdinal()
+                  .domain(d3.range(nodes.length))
+                  .range(d3.schemeCategory10);
+
+              //新建一个力导向图
+              var forceSimulation = d3.forceSimulation()
+                  .force("link",d3.forceLink())
+                  .force("charge",d3.forceManyBody())
+                  .force("center",d3.forceCenter());;
+
+              //初始化力导向图，也就是传入数据
+              //生成节点数据
+              forceSimulation.nodes(nodes)
+                  .on("tick",ticked);//这个函数很重要，后面给出具体实现和说明
+              //生成边数据
+              forceSimulation.force("link")
+                  .links(edges)
+                  .distance(100)
+              //设置图形的中心位置
+              forceSimulation.force("center")
+                  .x(width/2)
+                  .y(height/2);
+
+              //有了节点和边的数据后，我们开始绘制
+              //绘制边
+              var links = g.append("g")
+                  .selectAll("line")
+                  .data(edges)
+                  .enter()
+                  .append("line")
+                  .attr("stroke",function(d,i){
+                      return colorScale(i);
+                  })
+                  .attr("stroke-width",1);
+
+              //绘制节点
+              //老规矩，先为节点和节点上的文字分组
+              var gs = g.selectAll(".circleText")
+                  .data(nodes)
+                  .enter()
+                  .append("g")
+                  .attr("transform",function(d,i){
+                      var cirX = d.x;
+                      var cirY = d.y;
+                      return "translate("+cirX+","+cirY+")";
+                  })
+                  .call(d3.drag()
+                      .on("start",started)
+                      .on("drag",dragged)
+                      .on("end",ended)
+                  );
+
+              //绘制节点
+              gs.append("circle")
+                  .attr("r",8)
+                  .attr("fill",function(d,i){
+                      return colorScale(i);
+                  })
+              //文字
+              gs.append("text")
+                  .attr("x",-7)
+                  .attr("y",-5)
+                  .attr("dy",10)
+                  .attr("font-size", 13)
+                  .text(function(d){
+                      return d.name;
+                  })
+
+              function ticked(){
+                  links
+                      .attr("x1",function(d){return d.source.x;})
+                      .attr("y1",function(d){return d.source.y;})
+                      .attr("x2",function(d){return d.target.x;})
+                      .attr("y2",function(d){return d.target.y;});
+
+                  gs
+                      .attr("transform",function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+              }
+              function started(d){
+                  if(!d3.event.active){
+                      forceSimulation.alphaTarget(0.8).restart();
+                  }
+                  d.fx = d.x;
+                  d.fy = d.y;
+              }
+              function dragged(d){
+                  d.fx = d3.event.x;
+                  d.fy = d3.event.y;
+              }
+              function ended(d){
+                  if(!d3.event.active){
+                      forceSimulation.alphaTarget(0);
+                  }
+                  d.fx = null;
+                  d.fy = null;
+              }
+
+
          }
        }
     }else{
