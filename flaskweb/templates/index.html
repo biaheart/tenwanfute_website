@@ -31,7 +31,7 @@
         <fieldset>
           <legend>读取原始文件</legend>
           <div class="form-group">
-            <label for="exampleInputFile">导入</label>
+
             <input type="file" class="form-control-file" id="inputFile" aria-describedby="fileHelp">
           </div>
         </fieldset>
@@ -58,9 +58,19 @@
 
     <div class="container">
 <!--       method="POST" action="/reviseMatrix" target="myIframe"-->
-      <form id="reviseForm">
+      <ul class="nav nav-tabs">
+
+        <li class="nav-item">
+          <a class="nav-link active" data-toggle="tab" href="#series">增减串联支路</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-toggle="tab" href="#parallel">增减并联支路</a>
+        </li>
+      </ul>
+      <div id="myTab" class="tab-content">
+        <div class="tab-pane fade active show" id="series">
+          <form id="reviseForm">
         <fieldset>
-          <legend>修改导纳矩阵</legend>
           <iframe name="myIframe" style="display:none"></iframe>
           <div class="form-group">
             <div style="display: inline-block;">
@@ -99,6 +109,10 @@
             </div>
             <br>
             <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess5">支路电纳</label><br>
+              <input class="form-control" type="number" name="susceptance" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
               <button type="reset" class="btn btn-outline-info">重置</button>
               <button type="button" class="btn btn-outline-info" onclick="ajaxForm()">修改</button>
             </div>
@@ -106,6 +120,52 @@
 
         </fieldset>
       </form>
+        </div>
+        <div class="tab-pane fade" id="parallel">
+          <form id="reviseForm1">
+        <fieldset>
+          <iframe name="myIframe" style="display:none"></iframe>
+          <div class="form-group">
+            <div style="display: inline-block;">
+              <label for="exampleSelect5">选择矩阵</label>
+              <select class="form-control" id="exampleSelect5" name="select5" style="width: 150px;">
+                <option>null</option>
+              </select>
+
+            </div>
+            <div style="display: inline-block;">
+              <label for="exampleSelect6">选择方式</label>
+              <select class="form-control" id="exampleSelect6" name="select6" style="width: 150px;">
+                <option value="1">增加支路</option>
+                <option value="0">删减支路</option>
+              </select>
+            </div>
+
+          </div>
+          <div class="form-group has-success">
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess1">母线编号</label><br>
+              <input class="form-control" type="number" name="bus" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess2">支路电导</label><br>
+              <input class="form-control" type="number" name="conductance" style="width: 150px;">
+            </div>
+            <br>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess3">支路电纳</label><br>
+                <input class="form-control" type="number" name="susceptance" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <button type="reset" class="btn btn-outline-info">重置</button>
+              <button type="button" class="btn btn-outline-info" onclick="ajaxForm1()">修改</button>
+            </div>
+          </div>
+
+        </fieldset>
+      </form>
+        </div>
+      </div>
       <br>
     </div>
     </div>
@@ -185,6 +245,7 @@
               $('#exampleSelect1').append('<option>'+ response_data[key] +'</option>');
               $('#exampleSelect2').append('<option>'+ response_data[key] +'</option>');
               $('#exampleSelect4').append('<option>'+ response_data[key] +'</option>');
+              $('#exampleSelect5').append('<option>'+ response_data[key] +'</option>');
             }
           }
           else{
@@ -207,6 +268,7 @@
               $('#exampleSelect1').append('<option>'+ key +'</option>');
               $('#exampleSelect2').append('<option>'+ key +'</option>');
               $('#exampleSelect4').append('<option>'+ key +'</option>');
+              $('#exampleSelect5').append('<option>'+ key +'</option>');
             }
           }
           else{
@@ -259,7 +321,7 @@
   function ajaxForm(){
         var formData = new FormData($("#reviseForm")[0]);
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/reviseMatrix');
+        xhr.open('POST', '/reviseMatrixSeries');
         xhr.send(formData);
         xhr.onload = function (){
           if (xhr.status == 200){
@@ -269,6 +331,20 @@
             alert("上传失败请重试")
           }
         }
+  }
+  function ajaxForm1(){
+      var formData = new FormData($("#reviseForm1")[0]);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/reviseMatrixParallel');
+      xhr.send(formData);
+      xhr.onload = function (){
+        if (xhr.status == 200){
+          alert(xhr.responseText)
+        }
+        else{
+          alert("上传失败请重试")
+        }
+      }
   }
 
 

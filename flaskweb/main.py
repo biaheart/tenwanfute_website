@@ -5,6 +5,7 @@ from lib_packages import *
 
 app = Flask(__name__)
 
+
 # 默认路由
 @app.route('/')    # 路由默认使用GET方式进行路径访问，可以配置成methods=['GET', 'POST']等
 def index():
@@ -19,6 +20,7 @@ def initialization():
     for file in os.listdir(address):
         file_dict[file] =file[0:len(file)-4]
     return file_dict
+
 
 # 数据预处理路由
 @app.route('/dataPreprocess', methods=['POST'])  
@@ -37,7 +39,7 @@ def message():
     bus_num = f['BUS_NAMES'].shape[0]
     a2 = f['BRANCH_DATA'][()]
     matrix = Admittance_Matrix_Class.Admittancematrix(bus_num)
-    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a1[:, 13], a1[:, 14])
+    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a1[:, 13], a1[:, 14])
     # 支路追加建立矩阵
     matrix_storage_path = './data/knot_admittance_matrix_data/' + temp[21:len(temp[1]) - 4] + '.pkl'
     matrix_name = temp[21:len(temp[1]) - 4]
@@ -49,6 +51,7 @@ def message():
     return {
         matrix_name: data,
     }
+
 
 # 读取存储的矩阵路由
 @app.route('/get', methods=["POST"])
@@ -62,31 +65,65 @@ def get():
         key: data,
     }
 
-# 修改节点导纳矩阵路由
-@app.route('/reviseMatrix', methods=["POST"])
-def revise():
+
+# 修改节点导纳矩阵的串联支路路由
+@app.route('/reviseMatrixSeries', methods=["POST"])
+def reviseSeries():
     if request.method == 'POST':
         bus1 = request.form.get('bus1')
         bus2 = request.form.get('bus2')
         resistance = request.form.get('resistance')
         reactance = request.form.get('reactance')
+        susceptance = request.form.get('susceptance')
         matrix_name = request.form.get('select2') # 返回矩阵名称
         addOrminus = request.form.get('select3')    # 返回0或1，0表示删除，1表示增加
         matrix_address = './data/knot_admittance_matrix_data/' + matrix_name + '.pkl'
-    if (matrix_name == 'null') or (not all([bus1, bus2, resistance, reactance, matrix_name,addOrminus])):
+    if (matrix_name == 'null') or (not all([bus1, bus2, resistance, reactance, susceptance, matrix_name, addOrminus])):
         return "参数不完整修改失败"
     else:
-        with open(matrix_address, 'rb') as f:
-            matrix = pickle.load(f)
+        if int(bus1) > 0 and int(bus2) > 0:
+            with open(matrix_address, 'rb') as f:
+                matrix = pickle.load(f)
 
-        if (addOrminus == '1'):
-            matrix.add(float(bus1), float(bus2), float(resistance), float(reactance))
+            if (addOrminus == '1'):
+                matrix.add(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance))
 
+            else:
+                matrix.minus(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance))
+            with open(matrix_address, 'wb') as f:
+                pickle.dump(matrix, f)
+            return "修改成功，如需查看，请重新选择矩阵（如修改的矩阵和当前预览的矩阵相同，请先选择null后再选择矩阵，因为不是实时更新的啦）"
         else:
-            matrix.minus(float(bus1), float(bus2), float(resistance), float(reactance))
-        with open(matrix_address, 'wb') as f:
-            pickle.dump(matrix, f)
-        return "修改成功，如需查看，请重新选择矩阵（如修改的矩阵和当前预览的矩阵相同，请先选择null后再选择矩阵，因为不是实时更新的啦）"
+            return "母线编号输入错误"
+
+
+# 修改节点导纳矩阵的并联支路路由
+@app.route('/reviseMatrixParallel', methods=["POST"])
+def reviseParallel():
+    if request.method == 'POST':
+        bus = request.form.get('bus')
+        conductance = request.form.get('conductance')
+        susceptance = request.form.get('susceptance')
+        matrix_name = request.form.get('select5')   # 返回矩阵名称
+        addOrminus = request.form.get('select6')    # 返回0或1，0表示删除，1表示增加
+        matrix_address = './data/knot_admittance_matrix_data/' + matrix_name + '.pkl'
+    if (matrix_name == 'null') or (not all([bus, conductance, susceptance, matrix_name, addOrminus])):
+        return "参数不完整修改失败"
+    else:
+        if int(bus) > 0:
+            with open(matrix_address, 'rb') as f:
+                matrix = pickle.load(f)
+
+            if (addOrminus == '1'):
+                matrix.set_self_ad(int(bus), float(conductance), float(susceptance))
+
+            else:
+                matrix.set_self_minus(int(bus), float(conductance), float(susceptance))
+            with open(matrix_address, 'wb') as f:
+                pickle.dump(matrix, f)
+            return "修改成功，如需查看，请重新选择矩阵（如修改的矩阵和当前预览的矩阵相同，请先选择null后再选择矩阵，因为不是实时更新的啦）"
+        else:
+            return "母线编号输入错误"
 
 
 # 执行潮流计算的路由
