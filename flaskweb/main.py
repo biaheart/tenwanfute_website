@@ -32,6 +32,7 @@ def message():
     filename = file.filename
     path = os.path.join(storage_folder, filename)
     file.save(path)
+    # 将原始文件存储下来
     temp = data_preprocessing.read_data(path)
     # 原始文件预处理
     f = h5py.File(temp, 'r')
