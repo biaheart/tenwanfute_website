@@ -310,8 +310,73 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
         J[0:Bp.shape[0], Bp.shape[0]:Bp.shape[0] + Bpp.shape[0]] = N   # 导入N矩阵
         J[Bp.shape[0]:Bp.shape[0] + Bpp.shape[0], 0:Bp.shape[0]] = K   # 导入K矩阵
         J[Bp.shape[0]:Bp.shape[0] + Bpp.shape[0], Bp.shape[0]:Bp.shape[0] + Bpp.shape[0]] = L   # 导入L矩阵
+        U = -J.copy()  # 将雅可比矩阵值复制于上三角矩阵中
+        a = Bp.shape[0] + Bpp.shape[0]
+        n = 0
+        i = 1
+        D = np.zeros((a, a), dtype=np.float)
+        L = np.zeros((a, a), dtype=np.float)
+        Z = np.zeros((a, a), dtype=np.float)
 
-        d_unknowns = np.linalg.solve(-J, unbalanced_matrix)   # 求解方程组
+        while n < a:  # 消去n号节点
+            k = n
+            j = i - 1  # 通过中间变量i使得已知零元素不参与计算
+            p = i - 1
+            D[n][n] = U[n][n]  # 规格化矩阵元素生成
+            if k == n:
+                while p < a:
+                    U[n][p] = U[n][p] / D[n][n]
+                    Z[p][n] = U[p][n]
+                    L[p][n] = Z[p][n] / D[n][n]
+                    L[n][n] = U[n][n]
+                    p = p + 1
+
+            while j >= n and j < a:
+                if U[n][j] != 0:  # 仅非零元素列需要参与计算
+                    k = n + 1
+                    while k < a:
+                        U[k][j] = U[k][j] - Z[k][n] * U[n][j] / U[n][n]  # 形成上三角矩阵
+                        k = k + 1
+                j = j + 1
+            n = n + 1
+            i = i + 1
+
+        first = np.zeros((a, 1), dtype=np.float)
+        second = np.zeros((a, 1), dtype=np.float)
+        d_unknowns = np.zeros((a, 1), dtype=np.float)
+
+        # 前代过程
+        d = 1
+        sum = 0
+
+        first[0][0] = unbalanced_matrix[0][0]
+        while d < a:
+            e = 0
+            while e < d:
+                sum = sum + L[d][e] * first[e][0]
+                e = e + 1
+            first[d][0] = unbalanced_matrix[d][0] - sum
+            sum = 0
+            d = d + 1
+
+        # 规格化过程
+        t = 0
+        while t < a:
+            second[t][0] = first[t][0] / D[t][t]
+            t = t + 1
+        # 回代过程
+        g = 2
+        sum2 = 0
+        d_unknowns[a - 1][0] = second[a - 1][0]
+        while g < a + 1:
+            h = 1
+            while h < g:
+                sum2 = sum2 + U[a - g][a - h] * d_unknowns[a - h][0]
+                h = h + 1
+            d_unknowns[a - g][0] = second[a - g][0] - sum2
+            sum2 = 0
+            g = g + 1
+        
         d_angle = np.zeros((Bp.shape[0], 1))    # 定义相角修正量列向量
         d_angle[0:Bp.shape[0], 0] = d_unknowns[0:Bp.shape[0], 0]   # 得到相角修正量
 
