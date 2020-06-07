@@ -18,7 +18,7 @@ def initialization():
     file_dict = {}
     address = './data/knot_admittance_matrix_data'
     for file in os.listdir(address):
-        file_dict[file] =file[0:len(file)-4]
+        file_dict[file] = file[0:len(file)-4]
     return file_dict
 
 
@@ -40,7 +40,7 @@ def message():
     bus_num = f['BUS_NAMES'].shape[0]
     a2 = f['BRANCH_DATA'][()]
     matrix = Admittance_Matrix_Class.Admittancematrix(bus_num)
-    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a1[:, 13], a1[:, 14])
+    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a2[:, 14], a1[:, 13], a1[:, 14])
     # 支路追加建立矩阵
     matrix_storage_path = './data/knot_admittance_matrix_data/' + temp[21:len(temp[1]) - 4] + '.pkl'
     matrix_name = temp[21:len(temp[1]) - 4]
