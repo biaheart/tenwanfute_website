@@ -25,11 +25,11 @@ def initialization():
 # 数据预处理路由
 @app.route('/dataPreprocess', methods=['POST'])  
 def message():
-    storage_folder = './data/original_data'
     file = request.files['file']
     if file.filename == '':
         return "no selected file"
     filename = file.filename
+    storage_folder = './data/original_data'
     path = os.path.join(storage_folder, filename)
     file.save(path)
     # 将原始文件存储下来

@@ -10,14 +10,14 @@ def read_data(file_path):
     import re
     import numpy as np
     import h5py
+    storage_path = file_path[0:re.match('\.[^\.]+',file_path).end()] + '.h5'
+    # 存储位置为源文件的同级目录
     with open(file_path, 'r') as f:
         flag = 0
         for line in f:  # next后迭代器会+1，每一次for循环迭代器也会加一
             if re.match(r'\s*[0-9]+/', line):                                                   # 匹配第一行
                 mva_base_match = re.search(r'\s+[0-9]+.[0-9]*\s+', line)                        # 搜索唯一的浮点数
                 mva_base = float(line[mva_base_match.start():mva_base_match.end()])             # 记录该浮点数
-                storage_path = './data/original_data/' + line[re.match(r'[^a-zA-z]*', line).end():mva_base_match.start()] + '.h5'
-                # 将日期和姓名作为文件的存储名,存储位置为调用程序所在文件夹的./data/original_data文件夹里面
                 data = h5py.File(storage_path, 'w')                                             # 创建以name为名称的h5文件存储数据
                 data.create_dataset('MVA_BASE', data=mva_base)                                  # 存储基准功率
             if re.match('BUS', line):                                                           # 匹配母线部分
@@ -45,7 +45,7 @@ def read_data(file_path):
                 next(f)
                 flag = 1                                                                        # 文件读取成功标志
                 return storage_path
-        assert flag, '不是IEEE30BusSystemCDF.txt文件'                                            # 判断是否导入正确的文件
+        assert flag, '文件不匹配'                                            # 判断是否导入正确的文件
 
 '''
 import h5py
