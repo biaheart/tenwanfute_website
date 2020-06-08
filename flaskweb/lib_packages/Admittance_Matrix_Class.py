@@ -8,7 +8,7 @@ class Admittancematrix:  # 建立节点导纳矩阵类
         self.admittance_matrix = np.zeros((bus_num, bus_num), dtype=complex)  # 节点导纳矩阵
         self.part_matrix = np.zeros((bus_num, bus_num), dtype=complex)  # 辅助矩阵
 
-    def set_self_ad(self, node, conductance, susceptance):
+    def set_self_ad(self, node, conductance, susceptance):      # node为母线编号；conductance为母线电导；susceptance为母线电纳；
         if node > self.bus_num:
             return
         admittance = complex(conductance, susceptance)
@@ -17,7 +17,7 @@ class Admittancematrix:  # 建立节点导纳矩阵类
         self.admittance_matrix = self.admittance_matrix + self.part_matrix
         self.part_matrix = np.zeros((self.bus_num, self.bus_num), dtype=complex)
 
-    def set_self_minus(self, node, conductance, susceptance):
+    def set_self_minus(self, node, conductance, susceptance):    # node为母线编号；conductance为母线电导；susceptance为母线电纳；
         if node > self.bus_num:
             return
         admittance = complex(conductance, susceptance)
@@ -25,8 +25,10 @@ class Admittancematrix:  # 建立节点导纳矩阵类
         self.part_matrix[node - 1][node - 1] = -admittance
         self.admittance_matrix = self.admittance_matrix + self.part_matrix
         self.part_matrix = np.zeros((self.bus_num, self.bus_num), dtype=complex)
-
-    def add(self, node1, node2, resistance, reactance, total_b, k):  # 增加支路的支路追加法
+        
+    # 增加支路的支路追加法
+    # node1,node2为支路两端编号；resistance为支路电阻；reactance为支路电抗；total_b为并联支路电纳；k为支路变压器变比；
+    def add(self, node1, node2, resistance, reactance, total_b, k):  
         if resistance == 0 and reactance == 0:
             return
         impedance = complex(resistance, reactance)  # 计算阻抗
@@ -72,7 +74,9 @@ class Admittancematrix:  # 建立节点导纳矩阵类
             self.admittance_matrix = self.admittance_matrix + self.part_matrix  # 支路追加
             self.part_matrix = np.zeros((self.bus_num, self.bus_num), dtype=complex)  # 辅助矩阵置零
 
-    def minus(self, node1, node2, resistance, reactance, total_b, k):  # 删除支路的支路追加法
+    # 删减支路的支路追加法
+    # node1,node2为支路两端编号；resistance为支路电阻；reactance为支路电抗；total_b为并联支路电纳；k为支路变压器变比；
+    def minus(self, node1, node2, resistance, reactance, total_b, k):  
         if resistance == 0 and reactance == 0:
             return
         impedance = complex(resistance, reactance)  # 计算阻抗
@@ -103,6 +107,9 @@ class Admittancematrix:  # 建立节点导纳矩阵类
     def get_matrix(self):
         return self.admittance_matrix
 
+    # 构造完整的节点导纳矩阵
+    # nodelist1,nodelist2为支路两端编号数组；resistance为支路电阻数组；reactance为支路电抗数组；total_b为并联支路电纳数组；k为支路变压器变比数组；
+    # conductance为母线电导数组；susceptance为母线电纳数组；
     def generate_matrix(self, nodelist1, nodelist2, resistance, reactance, total_b, k, conductance, susceptance):
         for i in range(len(nodelist1)):
             self.add(nodelist1[i], nodelist2[i], resistance[i], reactance[i], total_b[i], k[i])
