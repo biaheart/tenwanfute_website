@@ -76,10 +76,11 @@ def reviseSeries():
         resistance = request.form.get('resistance')
         reactance = request.form.get('reactance')
         susceptance = request.form.get('susceptance')
+        k = request.form.get('k')
         matrix_name = request.form.get('select2') # 返回矩阵名称
         addOrminus = request.form.get('select3')    # 返回0或1，0表示删除，1表示增加
         matrix_address = './data/knot_admittance_matrix_data/' + matrix_name + '.pkl'
-    if (matrix_name == 'null') or (not all([bus1, bus2, resistance, reactance, susceptance, matrix_name, addOrminus])):
+    if (matrix_name == 'null') or (not all([bus1, bus2, resistance, reactance, susceptance, k, matrix_name, addOrminus])):
         return "参数不完整修改失败"
     else:
         if int(bus1) > 0 and int(bus2) > 0:
@@ -87,10 +88,10 @@ def reviseSeries():
                 matrix = pickle.load(f)
 
             if (addOrminus == '1'):
-                matrix.add(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance))
+                matrix.add(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance), float(k))
 
             else:
-                matrix.minus(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance))
+                matrix.minus(int(bus1), int(bus2), float(resistance), float(reactance), float(susceptance), float(k))
             with open(matrix_address, 'wb') as f:
                 pickle.dump(matrix, f)
             return "修改成功，如需查看，请重新选择矩阵（如修改的矩阵和当前预览的矩阵相同，请先选择null后再选择矩阵，因为不是实时更新的啦）"
