@@ -232,7 +232,54 @@
 
 <!--  第三个tab标签-->
   <div class="tab-pane fade" id="thermalPowerPlant">
-    <p class="container text-center">empty</p>
+    <div class="container">
+      <form id="power">
+        <fieldset>
+          <div class="form-group has-success">
+            <div style="display: inline-block;">
+            <legend>选择文件</legend>
+              <select class="form-control" id="exampleSelect7" name="select7" style="width: 150px;">
+                <option>null</option>
+              </select>
+            </div>
+            <br>
+            <legend>发电机有功约束</legend>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess1">最小值（%）</label><br>
+              <input class="form-control" type="number" name="Pmin" id="Pmin" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess2">最大值（%）</label><br>
+              <input class="form-control" type="number" name="Pmax" id="Pmax" style="width: 150px;">
+            </div>
+            <br>
+            <legend>节点电压约束</legend>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess3">最小值（%）</label><br>
+              <input class="form-control" type="number" name="Umin" id="Umin" style="width: 150px;">
+            </div>
+            <div style="display: inline-block;">
+              <label class="form-control-label" for="inputSuccess3">最大值（%）</label><br>
+              <input class="form-control" type="number" name="Umax" id="Umax" style="width: 150px;">
+            </div>
+            <br>
+            <legend>读取损耗函数文件后开始计算</legend>
+            <div class="form-group">
+              <input type="file" class="form-control-file" id="inputLossFile" aria-describedby="fileHelp">
+            </div>
+            <div style="display: inline-block;">
+              <button type="reset" class="btn btn-outline-info">重置</button>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+      <br>
+    </div>
+
+    <div id="optimizationResult" class="container">
+      <legend>火电机组负荷优化结果</legend>
+    </div>
+
   </div>
 
 </div>
@@ -251,6 +298,7 @@
               $('#exampleSelect2').append('<option>'+ response_data[key] +'</option>');
               $('#exampleSelect4').append('<option>'+ response_data[key] +'</option>');
               $('#exampleSelect5').append('<option>'+ response_data[key] +'</option>');
+              $('#exampleSelect7').append('<option>'+ response_data[key] +'</option>');
             }
           }
           else{
@@ -274,6 +322,7 @@
               $('#exampleSelect2').append('<option>'+ key +'</option>');
               $('#exampleSelect4').append('<option>'+ key +'</option>');
               $('#exampleSelect5').append('<option>'+ key +'</option>');
+              $('#exampleSelect7').append('<option>'+ key +'</option>');
             }
             alert("上传成功，文件预处理完成")
           }
@@ -282,6 +331,51 @@
           }
         }
   })
+
+<!--选择损耗文件导入后执行下面的函数，它将损耗文件和参数发送到后端，后端处理完后返回json对象，然后显示火电机组负荷优化结果-->
+  $("#inputLossFile").bind("change",function () {
+        var fileInfo = document.getElementById("inputLossFile").files[0];
+        var key = $("#exampleSelect7 option:selected").val();
+        var Pmin=$("#Pmin").val();
+        var Pmax=$("#Pmax").val();
+        var Umin=$("#Umin").val();
+        var Umax=$("#Umax").val();
+        if (key != "null" && Pmin != "" && Pmax != "" && Umin != "" && Umax != ""){
+            alert("计算耗时请稍等,按确定后开始计算");
+            var formData = new FormData();
+            formData.append('file', fileInfo);
+            formData.append('Pmin', Pmin);
+            formData.append('Pmax', Pmax);
+            formData.append('Umin', Umin);
+            formData.append('Umax', Umax);
+            formData.append('key', key);
+            var xhr = new XMLHttpRequest();
+            xhr.open('post', '/powerPlantOptimization');
+            xhr.send(formData);
+            xhr.onload = function (){
+              if (xhr.status == 200){
+                response_data = JSON.parse(xhr.responseText);
+                if (response_data['result'] == "success"){
+                    for (var key in response_data['P_optimize']){
+                        $('#optimizationResult').append('<p>'+ '节点：' + response_data['P_optimize'][key][0]);
+                        $('#optimizationResult').append(' 有功（MW）：' + response_data['P_optimize'][key][1]);
+                        $('#optimizationResult').append(' 无功（MVar）：' + response_data['P_optimize'][key][2] + '</p>');
+                    }
+                    $('#optimizationResult').append('<p>'+ '耗量特性：' + response_data['loss'] + '</p>');
+                }else{
+                     $('#optimizationResult').append('<p>'+ '优化失败，无局部最优解' + '</p>');
+                }
+                alert("上传成功，火电机组负荷分配优化完成")
+              }
+              else{
+                alert("上传失败请重试")
+              }
+            }
+        }else{
+              alert("请点击重置按钮后，填写完整的数据");
+        }
+  })
+
 <!--当预览矩阵的选项值改变的时候（null不做任何事情），发送请求接收返回的矩阵json对象，然后新生成一个table来将矩阵展示出来-->
   $("#exampleSelect1").change(function () {
     option = $("#exampleSelect1 option:selected").val()

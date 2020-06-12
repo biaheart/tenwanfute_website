@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request
-import os, h5py, pickle
+import os, h5py, pickle, re
 from lib_packages import *
+import numpy as np
+from lib_packages.power_distribution import fireengine
+from lib_packages.Admittance_Matrix_Class import Admittancematrix   # 需要导入建立节点导纳矩阵的类
+from lib_packages.input_pretreatment import input_pretreatment
 
 
 app = Flask(__name__)
@@ -25,6 +29,7 @@ def initialization():
 # 数据预处理路由
 @app.route('/dataPreprocess', methods=['POST'])  
 def message():
+    # 将原始文件存储下来
     file = request.files['file']
     if file.filename == '':
         return "no selected file"
@@ -32,9 +37,9 @@ def message():
     storage_folder = './data/original_data'
     path = os.path.join(storage_folder, filename)
     file.save(path)
-    # 将原始文件存储下来
-    temp = data_preprocessing.read_data(path)
     # 原始文件预处理
+    temp = data_preprocessing.read_data(path)
+    # 建立节点导纳矩阵
     f = h5py.File(temp, 'r')
     a1 = f['BUS_DATA'][()]
     bus_num = f['BUS_NAMES'].shape[0]
@@ -148,10 +153,65 @@ def loadFlowCalculation():
         matrix = pickle.load(file)
         admatrix = matrix.get_matrix()
     (U_actual_value, angle_actual_value, S_actual_value) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1, bus_num, MVA_BASE)
+    # 将潮流计算结果存为h5文件，放在./data/load_flow_calculation文件夹中
+    cal_storage_path = './data/load_flow_calculation/' + key + '.h5'
+    load_flow_result = h5py.File(cal_storage_path, 'w')
+    load_flow_result.create_dataset('U_actual_value', data=U_actual_value)
+    load_flow_result.create_dataset('angle_actual_value', data=angle_actual_value)
+    load_flow_result.create_dataset('S_actual_value', data=S_actual_value)
+    load_flow_result.close()
     # 下面的语句是将结果转成json格式进行传输，因为json没有复数类型，所以S_actual_value转成了字符串
     result = {'U_actual_value': U_actual_value.tolist(), 'angle_actual_value': angle_actual_value.tolist(),
               'S_actual_value': list(map(str, S_actual_value)), 'branch_connect': branch_connect, 'bus_num': bus_num}
     return result
+
+
+# 执行火电机组负荷优化的路由
+@app.route('/powerPlantOptimization', methods=["POST"])
+def power():
+    key = request.values.get("key")
+    # 发电机功率约束和节点电压约束（%）例如是90%至110%，那返回值为90和110，PminPercentage；PmaxPercentage；UminPercentage；UmaxPercentage
+    PminPercentage = float(request.values.get("Pmin"))/100
+    PmaxPercentage = float(request.values.get("Pmax"))/100
+    UminPercentage = float(request.values.get("Umin"))/100
+    UmaxPercentage = float(request.values.get("Umax"))/100
+    # 损耗函数文件处理，target
+    file = request.files['file']
+    if file.filename == '':
+        return "no selected file"
+    filename = file.filename
+    storage_folder = './data/original_data'
+    path = os.path.join(storage_folder, filename)
+    file.save(path)
+    target = []
+    with open(path, 'r') as f:
+        for line in f:  # next后迭代器会+1，每一次for循环迭代器也会加一
+            if re.match(r'[a-zA-Z]', line) or re.match(r'-999', line):
+                pass
+            else:
+                temp = []
+                temp.append(int(line[0:4]))
+                temp.append(float(line[6:10]))
+                temp.append(float(line[12:17]))
+                temp.append(float(line[19:27]))
+                target.append(temp)
+    target = np.array(target)
+    # 准备读取数据
+    ori_data_path = './data/original_data/' + key + '.h5'
+    f = h5py.File(ori_data_path, 'r')  # 正确读取进行潮流计算的h5文件
+    a1 = f['BUS_DATA'][()]  # 参数a1为读取主键为‘BUS_NAMES’的数据
+    bus_num = f['BUS_NAMES'].shape[0]  # 参数bus_num为母线个数
+    a2 = f['BRANCH_DATA'][()]
+    MVA_BASE = f['MVA_BASE'][()]  # 参数MVA_BASE为基准功率
+    matrix = Admittancematrix(bus_num)
+    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a2[:, 14], a1[:, 13], a1[:, 14])
+    admatrix = matrix.get_matrix()  # 参数admatirx为建立的节点导纳矩阵
+
+    U0, flow_PG, PLD, limit_min_Q, limit_max_Q, QLD = input_pretreatment(target, bus_num, a1, MVA_BASE, admatrix)
+    result = fireengine(target, MVA_BASE, U0, admatrix, UminPercentage, UmaxPercentage, flow_PG, PminPercentage, PmaxPercentage, PLD, limit_min_Q, limit_max_Q, QLD)
+    if result[0]==True:
+        responseData = {'loss':result[1], 'P_optimize':result[2].tolist(), 'result':"success"}
+        return responseData
 
 
 if __name__ == "__main__":
