@@ -115,7 +115,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
                 U2[m, 0] = initialize[0, i]
                 m = m + 1
             i = i + 1
-        dP1 = np.zeros((Bp.shape[0], 1))
+    dP1 = np.zeros((Bp.shape[0], 1))
     dQ1 = np.zeros((Bpp.shape[0], 1))
     dP1 = dP / U1
     dQ2 = dQ / U2
