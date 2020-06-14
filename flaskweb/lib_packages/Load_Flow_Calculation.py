@@ -110,7 +110,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
         dQ1 = np.zeros((Bpp.shape[0], 1))
         dP1 = dP / U1
         dQ2 = dQ / U2
-        U = -Bp.copy()  # 将雅可比矩阵值复制于上三角矩阵中
+        U = -Bp.copy()  # 将要运算的矩阵值复制于上三角矩阵中
         a = Bp.shape[0]
         n = 0
         i = 1
@@ -137,7 +137,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
                 j = j + 1
             n = n + 1
             i = i + 1
-        L = U.transpose()
+        L = U.transpose()    #矩阵对称因而转置形成下三角矩阵
         first = np.zeros((a, 1), dtype=np.float)
         second = np.zeros((a, 1), dtype=np.float)
         dangle1 = np.zeros((a, 1), dtype=np.float)
@@ -173,7 +173,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
             sum2 = 0
             g = g + 1
         dangle = dangle1 / U1  # 求解角度的不平衡量
-        U = -Bpp.copy()  # 将雅可比矩阵值复制于上三角矩阵中
+        U = -Bpp.copy()  # 将要运算的矩阵值复制于上三角矩阵中
         a = Bpp.shape[0]
         n = 0
         i = 1
@@ -437,7 +437,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
         i = 1
         D = np.zeros((a, a), dtype=np.float)
         L = np.zeros((a, a), dtype=np.float)
-        Z = np.zeros((a, a), dtype=np.float)
+        Z = np.zeros((a, a), dtype=np.float) #定义中间矩阵
 
         while n < a:  # 消去n号节点
             k = n
@@ -448,7 +448,7 @@ def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算�
                 while p < a:
                     U[n][p] = U[n][p] / D[n][n]
                     Z[p][n] = U[p][n]
-                    L[p][n] = Z[p][n] / D[n][n]
+                    L[p][n] = Z[p][n] / D[n][n] #通过中间矩阵形成下三角矩阵
                     L[n][n] = U[n][n]
                     p = p + 1
 
