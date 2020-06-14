@@ -116,14 +116,3 @@ class Admittancematrix:  # 建立节点导纳矩阵类
         for i in range(self.bus_num):
             self.set_self_ad(i+1, conductance[i], susceptance[i])
 
-'''
-import h5py
-
-f = h5py.File('UW ARCHIVE.h5', 'r')
-a1 = f['BUS_DATA'][()]  # 读取主键为‘BUS_NAMES’的数据
-bus_num = f['BUS_NAMES'].shape[0]
-a2 = f['BRANCH_DATA'][()]
-matrix = Admittancematrix(bus_num)
-matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a2[:, 14], a1[:, 13], a1[:, 14])
-print(matrix.get_matrix())
-'''

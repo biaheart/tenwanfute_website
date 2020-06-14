@@ -1,19 +1,10 @@
 def load_flow_calculation(admatrix, a1, bus_num, MVA_BASE):     # 潮流计算函数
     '''
-    import h5py
-    from lib_packages.Admittance_Matrix_Class import Admittancematrix   # 需要导入建立节点导纳矩阵的类
-
-
-    f = h5py.File('UW ARCHIVE.h5', 'r')    # 正确读取进行潮流计算的h5文件
-    a1 = f['BUS_DATA'][()]   # 参数a1为读取主键为‘BUS_NAMES’的数据
-    bus_num = f['BUS_NAMES'].shape[0]   # 参数bus_num为母线个数
-    a2 = f['BRANCH_DATA'][()]
-    MVA_BASE = f['MVA_BASE'][()]   # 参数MVA_BASE为基准功率
-    matrix = Admittancematrix(bus_num)
-    matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a1[:, 13], a1[:, 14])
-    admatrix = matrix.get_matrix()   # 参数admatirx为建立的节点导纳矩阵
-
-    print(load_flow_calculation(admatrix, a1, bus_num, MVA_BASE))  # 调用本函数的实例
+    :param admatrix: 节点导纳矩阵
+    :param a1: 读取主键为''BUS_NAMES'的数据
+    :param bus_num: 母线个数
+    :param MVA_BASE: 基准功率
+    :return: 电压，相角和节点注入功率
     '''
     import numpy as np
     import math

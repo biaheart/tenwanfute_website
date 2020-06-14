@@ -1,12 +1,10 @@
-'''
-数据预处理函数，输入文件内容异常会抛出error，存储文件的位置:'../data/original_data'
-输入值：文件的相对或者绝对路径
-返回值：成功读取返回'数据读取成功'
-输出值：一个命名为输入文件创始者，存有MVA_BASE,BUS_NAMES,BUS_DATA,BRANCH_DATA的h5文件,注意BUS_NAMES的编码，是byte，不是unicode
-'''
-
-
 def read_data(file_path):
+    '''
+    数据预处理函数，输入文件内容异常会抛出error，存储文件的位置:'../data/original_data'
+    输入值：文件的相对或者绝对路径
+    返回值：成功读取返回'数据读取成功'
+    输出值：一个命名为输入文件创始者，存有MVA_BASE,BUS_NAMES,BUS_DATA,BRANCH_DATA的h5文件,注意BUS_NAMES的编码，是byte，不是unicode
+    '''
     import re
     import numpy as np
     import h5py
@@ -82,16 +80,3 @@ def read_data(file_path):
                 return storage_path
         assert flag, '文件不匹配'                                            # 判断是否导入正确的文件
 
-'''
-import h5py
-file_name = r'IEEE30BusSystemCDF.txt'
-read_data(file_name)
-f = h5py.File(r'../data/original_data/UW ARCHIVE.h5', 'r')     # 打开一个h5文件对象
-f['BUS_DATA'][(0, 1)]                   # 读取BUS_DATA的第一行第二列的数据
-print(f.keys())
-print(f['BRANCH_DATA'][()])
-print(f['BUS_DATA'][()])
-print(f['MVA_BASE'][()])
-print(f['BUS_NAMES'][()])
-f.close()
-'''

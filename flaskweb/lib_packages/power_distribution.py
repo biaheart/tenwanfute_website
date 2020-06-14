@@ -55,26 +55,3 @@ def fireengine(target, MVA_BASE, U0, admatrix, Umin, Umax, flow_PG, Pmin, Pmax, 
     data_deta = res.x[2 * k + admatrix.shape[0]: 2 * k + 2 * admatrix.shape[0]]     # 各个节点相角
     return res.success, min_F, divide_PG, data_pu_U, data_deta
     # 返回最优化求解成功符号“True”；总耗量最小值；各发电机节点编号以及对应有功无功；各个节点电压标幺值；各个节点相角；
-
-'''
-# 在main中实现火电机组分配的调用过程
-import numpy as np
-import h5py
-from lib_packages.power_distribution import fireengine
-from lib_packages.Admittance_Matrix_Class import Admittancematrix   # 需要导入建立节点导纳矩阵的类
-from lib_packages.input_pretreatment import input_pretreatment
-
-target = np.array([[1, 4, 0.3, 0.0007], [2, 3, 0.32, 0.0004], [3, 3.5, 0.3, 0.00045]])    # 读取耗量特性的文件
-
-f = h5py.File('009ieee.h5', 'r')    # 正确读取进行潮流计算的h5文件
-a1 = f['BUS_DATA'][()]   # 参数a1为读取主键为‘BUS_NAMES’的数据
-bus_num = f['BUS_NAMES'].shape[0]   # 参数bus_num为母线个数
-a2 = f['BRANCH_DATA'][()]
-MVA_BASE = f['MVA_BASE'][()]   # 参数MVA_BASE为基准功率
-matrix = Admittancematrix(bus_num)
-matrix.generate_matrix(a2[:, 0], a2[:, 1], a2[:, 6], a2[:, 7], a2[:, 8], a2[:, 14], a1[:, 13], a1[:, 14])
-admatrix = matrix.get_matrix()   # 参数admatirx为建立的节点导纳矩阵
-
-U0, flow_PG, PLD, limit_min_Q, limit_max_Q, QLD = input_pretreatment(target, bus_num, a1, MVA_BASE, admatrix)
-print(fireengine(target, MVA_BASE, U0, admatrix, 0.9, 1.1, flow_PG, 0.8, 1.2, PLD, limit_min_Q, limit_max_Q, QLD))
-'''

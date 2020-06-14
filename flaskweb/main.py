@@ -3,15 +3,14 @@ import os, h5py, pickle, re
 from lib_packages import *
 import numpy as np
 from lib_packages.power_distribution import fireengine
-from lib_packages.Admittance_Matrix_Class import Admittancematrix   # 需要导入建立节点导纳矩阵的类
+from lib_packages.Admittance_Matrix_Class import Admittancematrix
 from lib_packages.input_pretreatment import input_pretreatment
-
 
 app = Flask(__name__)
 
 
 # 默认路由
-@app.route('/')    # 路由默认使用GET方式进行路径访问，可以配置成methods=['GET', 'POST']等
+@app.route('/')  # 路由默认使用GET方式进行路径访问，可以配置成methods=['GET', 'POST']等
 def index():
     return render_template('index.html')
 
@@ -22,12 +21,12 @@ def initialization():
     file_dict = {}
     address = './data/knot_admittance_matrix_data'
     for file in os.listdir(address):
-        file_dict[file] = file[0:len(file)-4]
+        file_dict[file] = file[0:len(file) - 4]
     return file_dict
 
 
 # 数据预处理路由
-@app.route('/dataPreprocess', methods=['POST'])  
+@app.route('/dataPreprocess', methods=['POST'])
 def message():
     # 将原始文件存储下来
     file = request.files['file']
@@ -82,10 +81,11 @@ def reviseSeries():
         reactance = request.form.get('reactance')
         susceptance = request.form.get('susceptance')
         k = request.form.get('k')
-        matrix_name = request.form.get('select2') # 返回矩阵名称
-        addOrminus = request.form.get('select3')    # 返回0或1，0表示删除，1表示增加
+        matrix_name = request.form.get('select2')  # 返回矩阵名称
+        addOrminus = request.form.get('select3')  # 返回0或1，0表示删除，1表示增加
         matrix_address = './data/knot_admittance_matrix_data/' + matrix_name + '.pkl'
-    if (matrix_name == 'null') or (not all([bus1, bus2, resistance, reactance, susceptance, k, matrix_name, addOrminus])):
+    if (matrix_name == 'null') or (
+    not all([bus1, bus2, resistance, reactance, susceptance, k, matrix_name, addOrminus])):
         return "参数不完整修改失败"
     else:
         if int(bus1) > 0 and int(bus2) > 0:
@@ -111,8 +111,8 @@ def reviseParallel():
         bus = request.form.get('bus')
         conductance = request.form.get('conductance')
         susceptance = request.form.get('susceptance')
-        matrix_name = request.form.get('select5')   # 返回矩阵名称
-        addOrminus = request.form.get('select6')    # 返回0或1，0表示删除，1表示增加
+        matrix_name = request.form.get('select5')  # 返回矩阵名称
+        addOrminus = request.form.get('select6')  # 返回0或1，0表示删除，1表示增加
         matrix_address = './data/knot_admittance_matrix_data/' + matrix_name + '.pkl'
     if (matrix_name == 'null') or (not all([bus, conductance, susceptance, matrix_name, addOrminus])):
         return "参数不完整修改失败"
@@ -135,7 +135,7 @@ def reviseParallel():
 
 # 执行潮流计算的路由
 @app.route('/loadFlowCalculation', methods=["POST"])
-def loadFlowCalculation():
+def load_flow_calculation():
     key = request.values.get("key")
     ori_data_path = './data/original_data/' + key + '.h5'
     knot_matrix_data_path = './data/knot_admittance_matrix_data/' + key + '.pkl'
@@ -147,12 +147,14 @@ def loadFlowCalculation():
     branch_data = f['BRANCH_DATA'][()]
     # 以下几行代码是为了获得节点连接关系的数据
     branch_connect = branch_data[:, 0:2].tolist()
-    branch_connect = list(map(lambda x: list(map(int, x)), branch_connect)) # 将数据从numpy矩阵转成list且将浮点型转成整型
+    branch_connect = list(map(lambda x: list(map(int, x)), branch_connect))  # 将数据从numpy矩阵转成list且将浮点型转成整型
     f.close()
     with open(knot_matrix_data_path, 'rb') as file:
         matrix = pickle.load(file)
         admatrix = matrix.get_matrix()
-    (U_actual_value, angle_actual_value, S_actual_value) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1, bus_num, MVA_BASE)
+    (U_actual_value, angle_actual_value, S_actual_value) = Load_Flow_Calculation.load_flow_calculation(admatrix, a1,
+                                                                                                       bus_num,
+                                                                                                       MVA_BASE)
     # 将潮流计算结果存为h5文件，放在./data/load_flow_calculation文件夹中
     cal_storage_path = './data/load_flow_calculation/' + key + '.h5'
     load_flow_result = h5py.File(cal_storage_path, 'w')
@@ -171,10 +173,10 @@ def loadFlowCalculation():
 def power():
     key = request.values.get("key")
     # 发电机功率约束和节点电压约束（%）例如是90%至110%，那返回值为90和110，PminPercentage；PmaxPercentage；UminPercentage；UmaxPercentage
-    PminPercentage = float(request.values.get("Pmin"))/100
-    PmaxPercentage = float(request.values.get("Pmax"))/100
-    UminPercentage = float(request.values.get("Umin"))/100
-    UmaxPercentage = float(request.values.get("Umax"))/100
+    PminPercentage = float(request.values.get("Pmin")) / 100
+    PmaxPercentage = float(request.values.get("Pmax")) / 100
+    UminPercentage = float(request.values.get("Umin")) / 100
+    UmaxPercentage = float(request.values.get("Umax")) / 100
     # 损耗函数文件处理，target
     file = request.files['file']
     if file.filename == '':
@@ -208,10 +210,11 @@ def power():
     admatrix = matrix.get_matrix()  # 参数admatirx为建立的节点导纳矩阵
 
     U0, flow_PG, PLD, limit_min_Q, limit_max_Q, QLD = input_pretreatment(target, bus_num, a1, MVA_BASE, admatrix)
-    result = fireengine(target, MVA_BASE, U0, admatrix, UminPercentage, UmaxPercentage, flow_PG, PminPercentage, PmaxPercentage, PLD, limit_min_Q, limit_max_Q, QLD)
-    if result[0]==True:
-        responseData = {'loss':result[1], 'P_optimize':result[2].tolist(), 'result':"success"}
-        return responseData
+    result = fireengine(target, MVA_BASE, U0, admatrix, UminPercentage, UmaxPercentage, flow_PG, PminPercentage,
+                        PmaxPercentage, PLD, limit_min_Q, limit_max_Q, QLD)
+    if result[0] == True:
+        response_data = {'loss': result[1], 'P_optimize': result[2].tolist(), 'result': "success"}
+        return response_data
 
 
 if __name__ == "__main__":
